@@ -205,22 +205,22 @@ class FakeSut(SutDescription):
 
 
 def generate_content(benchmark_scores, output_dir, anonymize, view_embed, custom_branding=None):
-    static_site_generator = StaticSiteGenerator(view_embed=view_embed, custom_branding=custom_branding)
-    if anonymize:
-
-        rng = random.Random(anonymize)
-        rng.shuffle(benchmark_scores)
-
-        counter = 0
-        for bs in benchmark_scores:
-            counter += 1
-            key = f"sut{counter:02d}"
-            name = f"System Under Test {counter}"
-
-            bs.sut = FakeSut(key, name)
-            static_site_generator._content[key] = {"name": name, "tagline": "A well-known model."}
+    # static_site_generator = StaticSiteGenerator(view_embed=view_embed, custom_branding=custom_branding)
+    # if anonymize:
+    #
+    #     rng = random.Random(anonymize)
+    #     rng.shuffle(benchmark_scores)
+    #
+    #     counter = 0
+    #     for bs in benchmark_scores:
+    #         counter += 1
+    #         key = f"sut{counter:02d}"
+    #         name = f"System Under Test {counter}"
+    #
+    #         bs.sut = FakeSut(key, name)
+    #         static_site_generator._content[key] = {"name": name, "tagline": "A well-known model."}
     echo(termcolor.colored(f"\nBenchmarking complete, rendering reports...", "green"))
-    static_site_generator.generate(benchmark_scores, output_dir)
+    # static_site_generator.generate(benchmark_scores, output_dir)
     echo(termcolor.colored(f"\nReports complete, open {output_dir}/index.html", "green"))
 
 
