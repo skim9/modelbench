@@ -5,6 +5,7 @@ from unittest.mock import MagicMock
 from unittest.mock import patch
 
 import pytest
+from modelgauge.tests.safe import SafeTest, SafePersonas
 
 from modelbench.benchmarks import (
     BenchmarkDefinition,
@@ -22,7 +23,7 @@ def benchmark_score(end_time):
     bd = GeneralPurposeAiChatBenchmark()
     bs = BenchmarkScore(
         bd,
-        ModelGaugeSut.for_key("mistral-7b"),
+        ModelGaugeSut.for_key("alpaca-7b"),
         [
             HazardScore(
                 hazard_definition=SafeCaeHazard(),
@@ -65,7 +66,7 @@ def static_site_generator_view_embed():
         "static/style.css",
         "benchmarks.html",
         "general_purpose_ai_chat_benchmark.html",
-        "mistral-7b_general_purpose_ai_chat_benchmark_report.html",
+        "alpaca-7b_general_purpose_ai_chat_benchmark_report.html",
         "index.html",
     ],
 )
@@ -125,7 +126,7 @@ class TestObjectContentKeysExist:
         bh = SafeCaeHazard()
         bs = BenchmarkScore(
             bd,
-            ModelGaugeSut.for_key("mistral-7b"),
+            ModelGaugeSut.for_key("alpaca-7b"),
             [
                 HazardScore(
                     hazard_definition=bh, score=ValueEstimate.make(bh.reference_standard(), 50), test_scores={}

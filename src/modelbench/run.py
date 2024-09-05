@@ -86,8 +86,8 @@ def cli() -> None:
     "benchmark_name",
     "--benchmark",
     type=click.Choice([c.__name__ for c in BenchmarkDefinition.__subclasses__()]),
-    default="DemoBenchmark",
-    help="Benchmark to run (Default: DemoBenchmark)",
+    default="GeneralPurposeAiChatBenchmark",
+    help="Benchmark to run (Default: GeneralPurposeAiChatBenchmark)",
     multiple=False,
 )
 @local_plugin_dir_option
@@ -182,7 +182,6 @@ def score_a_sut(benchmarks, max_instances, secrets, progress, debug, sut):
                     data_dir="./run",
                     max_test_items=items,
                     disable_progress_bar=progress.print_updates,  # Proxy for machine-readable logging.
-                    use_caching=False,
                 )
                 progress.increment()
 
