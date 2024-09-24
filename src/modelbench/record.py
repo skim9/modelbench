@@ -116,7 +116,7 @@ class BenchmarkScoreEncoder(json.JSONEncoder):
                 result["initialization"] = o.instance_initialization()
             return result
         elif isinstance(o, pydantic.BaseModel):
-            return o.model_dump()
+            return o.model_dump(exclude_defaults=True, exclude_none=True)
         elif isinstance(o, datetime):
             return str(o)
         else:

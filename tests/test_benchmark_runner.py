@@ -1,4 +1,3 @@
-import inspect
 from typing import Dict
 from unittest.mock import MagicMock
 
@@ -102,10 +101,14 @@ class TestRunners:
         return ModelgaugeTestWrapper(raw_test, tmp_path)
 
     @pytest.fixture()
-    def benchmark(self, a_test):
+    def a_benchmark(self, a_test):
+
         class AHazard(HazardDefinition):
             def tests(self, secrets: RawSecrets) -> List[PromptResponseTest]:
                 return [a_test]
+
+            def reference_standard(self) -> float:
+                return 0.5
 
             def score(self, sut_scores: Mapping[str, TestRecord]) -> HazardScore:
                 count = 0
@@ -118,9 +121,12 @@ class TestRunners:
                 score = ValueEstimate.make(total / count, count)
 
                 test_scores = {}
-                return HazardScore(hazard_definition=self, score=score, test_scores=test_scores)
+                hs = HazardScore(hazard_definition=self, score=score, test_scores=test_scores)
+                return hs
 
         class ABenchmark(BenchmarkDefinition):
+            _uid_definition = {"name": "a_benchmark", "version": 1.0}
+
             def _make_hazards(self) -> Sequence[HazardDefinition]:
                 return [AHazard()]
 
@@ -142,8 +148,8 @@ class TestRunners:
     def hazard(self):
         pass
 
-    def test_benchmark_source(self, fake_secrets, tmp_path, benchmark):
-        bsa = TestRunItemSource(self.a_run(tmp_path, secrets=fake_secrets, max_items=1, benchmarks=[benchmark]))
+    def test_benchmark_source(self, fake_secrets, tmp_path, a_benchmark):
+        bsa = TestRunItemSource(self.a_run(tmp_path, secrets=fake_secrets, max_items=1, benchmarks=[a_benchmark]))
         iterator = iter(bsa.new_item_iterable())
         first_item = next(iterator)
         assert isinstance(first_item, TestRunItem)
@@ -154,7 +160,7 @@ class TestRunners:
     def test_benchmark_sut_assigner(self, a_wrapped_test, tmp_path):
         sut_one = ModelGaugeSut("one")
         sut_two = ModelGaugeSut("two")
-        test_item = TestItem(prompts=[])
+        test_item = TestItem(prompts=[PromptWithContext(prompt=TextPrompt(text="Hello!"), source_id="hello")])
 
         bsa = TestRunSutAssigner(self.a_run(tmp_path, suts=[sut_one, sut_two]))
         bsa.handle_item(TestRunItem(a_wrapped_test, test_item))
@@ -246,18 +252,18 @@ class TestRunners:
         assert run_result.test_records
         assert run_result.test_records[a_test.uid][sut.key]
 
-    def test_basic_benchmark_run(self, tmp_path, fake_secrets, benchmark):
+    def test_basic_benchmark_run(self, tmp_path, fake_secrets, a_benchmark):
         runner = BenchmarkRunner(tmp_path)
         runner.secrets = fake_secrets
 
-        runner.add_benchmark(benchmark)
+        runner.add_benchmark(a_benchmark)
         sut = ModelGaugeSut("demo_yes_no")
         runner.add_sut(sut)
         runner.max_items = 1
         run_result = runner.run()
 
         assert run_result.benchmark_scores
-        assert run_result.benchmark_scores[benchmark][sut]
+        assert run_result.benchmark_scores[a_benchmark][sut]
 
     def test_test_runner_has_standards(self, tmp_path, a_test, fake_secrets):
         runner = TestRunner(tmp_path)
@@ -279,7 +285,7 @@ class TestRunners:
         runner.add_test(a_test)
         runner.run()
 
-    def test_benchmark_runner_has_standards(self, tmp_path, benchmark, fake_secrets):
+    def test_benchmark_runner_has_standards(self, tmp_path, a_benchmark, fake_secrets):
         runner = BenchmarkRunner(tmp_path)
         runner.secrets = fake_secrets
         runner.add_sut(ModelGaugeSut("demo_yes_no"))
@@ -288,7 +294,7 @@ class TestRunners:
             runner.run()
         assert "add_benchmark" in str(e)
 
-        runner.add_benchmark(benchmark)
+        runner.add_benchmark(a_benchmark)
         runner.run()
 
     def test_sut_caching(self, item_from_test, a_wrapped_test, tmp_path):
