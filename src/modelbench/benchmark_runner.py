@@ -201,7 +201,6 @@ class TestRunBase:
         # Check for missing secrets without instantiating any objects
         missing_secrets = []
         for annotator_uid in test.get_annotators():
-            print(f"a={annotator_uid}")
             missing_secrets.extend(ANNOTATORS.get_missing_dependencies(annotator_uid, secrets=self.secrets))
         raise_if_missing_from_config(missing_secrets)
 
@@ -250,16 +249,8 @@ class BenchmarkRun(TestRunBase):
         self.benchmark_scores = defaultdict(dict)
 
         for b in self.benchmarks:
-            print(f"b={b}")
             for h in b.hazards():
-                print(f"h={h}")
                 for t in h.tests(self.secrets):
-                    import inspect
-
-                    print(f"t={t}")
-                    print(f"t={inspect.getfile(t.__class__)}")
-                    print(f"ta={t.get_annotators()}")
-
                     self.add_test(t)
 
 
