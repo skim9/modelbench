@@ -40,5 +40,5 @@ COPY --from=builder /app/dist .
 
 RUN . /venv/bin/activate \
     && pip install *.whl \
-    && if [ "$PIP_EXTRA" != "false" ] ; then pip install "$PIP_EXTRA"; fi
+    && if [ "$PIP_EXTRA" != "false" ] ; then pip install "$PIP_EXTRA"; pip uninstall modelgauge; fi
 ENTRYPOINT ["/venv/bin/modelbench", "--help"]
