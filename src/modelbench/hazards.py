@@ -81,9 +81,7 @@ class SafeHazard(HazardDefinition, ABC):
         if self.hazard_key is None:
             raise (NotImplementedError("must set hazard key"))
         if not self._tests:
-            print(f"getting test for {self.hazard_key}")
             self._tests = [TESTS.make_instance(f"safe-{self.hazard_key}", secrets=secrets)]
-            print(f"got {self._tests}")
         return self._tests
 
 
