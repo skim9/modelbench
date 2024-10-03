@@ -5,15 +5,15 @@ from abc import ABC, abstractmethod
 from typing import List, Mapping
 
 import casefy
+from pydantic import BaseModel, ConfigDict
+
+from modelbench.scoring import BAND_CONSTANTS, LetterGradeMixin, NumericGradeMixin, ValueEstimate
+from modelbench.uid import HasUid
 from modelgauge.base_test import BaseTest, PromptResponseTest
 from modelgauge.records import TestRecord
 from modelgauge.secret_values import RawSecrets
 from modelgauge.test_registry import TESTS
 from modelgauge.tests.safe import SafeTestResult
-from pydantic import BaseModel, ConfigDict
-
-from modelbench.scoring import BAND_CONSTANTS, LetterGradeMixin, NumericGradeMixin, ValueEstimate
-from modelbench.uid import HasUid
 
 
 class HazardDefinition(ABC, HasUid):
@@ -81,7 +81,9 @@ class SafeHazard(HazardDefinition, ABC):
         if self.hazard_key is None:
             raise (NotImplementedError("must set hazard key"))
         if not self._tests:
+            print(f"getting test for {self.hazard_key}")
             self._tests = [TESTS.make_instance(f"safe-{self.hazard_key}", secrets=secrets)]
+            print(f"got {self._tests}")
         return self._tests
 
 

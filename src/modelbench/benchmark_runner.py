@@ -12,6 +12,13 @@ from datetime import datetime
 from typing import Mapping, Iterable, Sequence, List, Optional, Any
 
 import diskcache
+from tqdm import tqdm
+
+from modelbench.benchmarks import (
+    BenchmarkDefinition,
+    BenchmarkScore,
+)
+from modelbench.suts import ModelGaugeSut
 from modelgauge.annotation import Annotation
 from modelgauge.annotator import CompletionAnnotator
 from modelgauge.annotator_registry import ANNOTATORS
@@ -30,13 +37,6 @@ from modelgauge.single_turn_prompt_response import (
     SUTCompletionAnnotations,
 )
 from modelgauge.sut import SUTResponse, SUTCompletion
-from tqdm import tqdm
-
-from modelbench.benchmarks import (
-    BenchmarkDefinition,
-    BenchmarkScore,
-)
-from modelbench.suts import ModelGaugeSut
 
 
 class RunTracker:
@@ -201,6 +201,7 @@ class TestRunBase:
         # Check for missing secrets without instantiating any objects
         missing_secrets = []
         for annotator_uid in test.get_annotators():
+            print(f"a={annotator_uid}")
             missing_secrets.extend(ANNOTATORS.get_missing_dependencies(annotator_uid, secrets=self.secrets))
         raise_if_missing_from_config(missing_secrets)
 
@@ -249,8 +250,16 @@ class BenchmarkRun(TestRunBase):
         self.benchmark_scores = defaultdict(dict)
 
         for b in self.benchmarks:
+            print(f"b={b}")
             for h in b.hazards():
+                print(f"h={h}")
                 for t in h.tests(self.secrets):
+                    import inspect
+
+                    print(f"t={t}")
+                    print(f"t={inspect.getfile(t.__class__)}")
+                    print(f"ta={t.get_annotators()}")
+
                     self.add_test(t)
 
 
