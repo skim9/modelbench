@@ -17,7 +17,7 @@ limitations = [
 ]
 
 [general_purpose_ai_chat_benchmark_fr_fr_1_0]
-name = "French (Franch) benchmark for general purpose AI chat model (V1.0)"
+name = "French (France) benchmark for general purpose AI chat model (V1.0)"
 
 version = "1.0"
 
