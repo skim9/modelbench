@@ -13,10 +13,6 @@ from typing import List, Optional
 import click
 import termcolor
 from click import echo
-from modelgauge.config import load_secrets_from_config, write_default_config
-from modelgauge.load_plugins import load_plugins
-from modelgauge.sut_registry import SUTS
-from modelgauge.tests.safe_v1 import Locale
 
 from modelbench.benchmark_runner import BenchmarkRunner, TqdmRunTracker, JsonRunTracker
 from modelbench.benchmarks import BenchmarkDefinition, GeneralPurposeAiChatBenchmark, GeneralPurposeAiChatBenchmarkV1
@@ -24,6 +20,10 @@ from modelbench.hazards import STANDARDS
 from modelbench.record import dump_json
 from modelbench.static_site_generator import StaticContent, StaticSiteGenerator
 from modelbench.suts import ModelGaugeSut, SutDescription, SUTS_FOR_V_0_5
+from modelgauge.config import load_secrets_from_config, write_default_config
+from modelgauge.load_plugins import load_plugins
+from modelgauge.sut_registry import SUTS
+from modelgauge.tests.safe_v1 import Locale
 
 _DEFAULT_SUTS = SUTS_FOR_V_0_5
 
@@ -116,9 +116,9 @@ def benchmark(
 
     benchmark_scores = score_benchmarks(benchmarks, suts, max_instances, json_logs, debug)
     generate_content(benchmark_scores, output_dir, anonymize, view_embed, custom_branding)
-    for i in range(len(benchmark_scores)):
-        json_path = output_dir / f"benchmark_record-{benchmarks[i].uid}.json"
-        dump_json(json_path, start_time, benchmarks[i], benchmark_scores[i])
+    for b in benchmarks:
+        json_path = output_dir / f"benchmark_record-{b.uid}.json"
+        dump_json(json_path, start_time, b, [score for score in benchmark_scores if score.benchmark_definition == b])
 
 
 def find_suts_for_sut_argument(sut_args: List[str]):
