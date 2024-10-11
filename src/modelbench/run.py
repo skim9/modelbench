@@ -175,6 +175,8 @@ def run_benchmarks_for_suts(benchmarks, suts, max_instances, debug=False, json_l
     runner.thread_count = thread_count
     runner.run_tracker = JsonRunTracker() if json_logs else TqdmRunTracker(0.5)
     run = runner.run()
+    print("Cache info:")
+    print(run.cache_info())
     return run
 
 

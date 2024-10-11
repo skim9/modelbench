@@ -37,6 +37,13 @@ from modelgauge.single_turn_prompt_response import (
     SUTCompletionAnnotations,
 )
 from modelgauge.sut import SUTResponse, SUTCompletion
+from tqdm import tqdm
+
+from modelbench.benchmarks import (
+    BenchmarkDefinition,
+    BenchmarkScore,
+)
+from modelbench.suts import ModelGaugeSut
 
 
 class RunTracker:
@@ -176,7 +183,8 @@ class TestRunBase:
         super().__init__()
         # copy the starting state
         self.pipeline_segments = []
-        self.test_data_path = runner.data_dir / "tests"
+        self.data_dir = runner.data_dir
+        self.test_data_path = self.data_dir / "tests"
         self.secrets = runner.secrets
         self.suts = runner.suts
         self.max_items = runner.max_items
@@ -185,6 +193,9 @@ class TestRunBase:
         self._test_lookup = {}
         self.run_tracker = runner.run_tracker
         self.completed_item_count = 0
+
+        self.caches = {}
+        self.cache_starting_size = {}
 
         # set up for result collection
         self.finished_items = defaultdict(lambda: defaultdict(lambda: list()))
@@ -228,6 +239,24 @@ class TestRunBase:
     def annotators_for_test(self, test: PromptResponseTest) -> Sequence[CompletionAnnotator]:
         return self.test_annotators[test.uid]
 
+    def cache_for(self, cache_name: str):
+        if self.data_dir:
+            result = DiskCache(self.data_dir / cache_name)
+        else:
+            result = NullCache()
+
+        self.caches[cache_name] = result
+        self.cache_starting_size[cache_name] = len(result)
+        return result
+
+    def cache_info(self):
+        result = []
+        for key in self.caches.keys():
+            result.append(f"  {key}: {self.caches[key]}")
+            result.append(f"  {key}: started with {self.cache_starting_size[key]}")
+            result.append(f"  {key}: finished with {len(self.caches[key])}")
+        return "\n".join(result)
+
 
 class TestRun(TestRunBase):
     tests: list[ModelgaugeTestWrapper]
@@ -260,13 +289,9 @@ class IntermediateCachingPipe(Pipe):
     this just makes a cache available for internal use to cache intermediate results.
     """
 
-    def __init__(self, thread_count=1, cache_path=None):
+    def __init__(self, cache: MBCache, thread_count=1):
         super().__init__(thread_count)
-
-        if cache_path:
-            self.cache = diskcache.Cache(cache_path).__enter__()
-        else:
-            self.cache = NullCache()
+        self.cache = cache
 
     def handle_item(self, item) -> Optional[Any]:
         pass
@@ -312,8 +337,8 @@ class TestRunSutAssigner(Pipe):
 
 class TestRunSutWorker(IntermediateCachingPipe):
 
-    def __init__(self, test_run: TestRunBase, thread_count=1, cache_path=None):
-        super().__init__(thread_count, cache_path=cache_path)
+    def __init__(self, test_run: TestRunBase, cache: MBCache, thread_count=1):
+        super().__init__(cache, thread_count)
         self.test_run = test_run
 
     def handle_item(self, item):
@@ -340,8 +365,8 @@ class TestRunSutWorker(IntermediateCachingPipe):
 
 class TestRunAnnotationWorker(IntermediateCachingPipe):
 
-    def __init__(self, test_run: TestRunBase, thread_count=1, cache_path=None):
-        super().__init__(thread_count, cache_path=cache_path)
+    def __init__(self, test_run: TestRunBase, cache: MBCache, thread_count=1, cache_path=None):
+        super().__init__(cache, thread_count)
         self.test_run = test_run
 
     def handle_item(self, item: TestRunItem) -> TestRunItem:
@@ -425,11 +450,9 @@ class TestRunnerBase:
     def _build_pipeline(self, run):
         run.pipeline_segments.append(TestRunItemSource(run))
         run.pipeline_segments.append(TestRunSutAssigner(run))
+        run.pipeline_segments.append(TestRunSutWorker(run, run.cache_for("sut_cache"), thread_count=self.thread_count))
         run.pipeline_segments.append(
-            TestRunSutWorker(run, thread_count=self.thread_count, cache_path=self.data_dir / "sut_cache")
-        )
-        run.pipeline_segments.append(
-            TestRunAnnotationWorker(run, thread_count=self.thread_count, cache_path=self.data_dir / "annotator_cache")
+            TestRunAnnotationWorker(run, run.cache_for("annotator_cache"), thread_count=self.thread_count)
         )
         run.pipeline_segments.append(TestRunResultsCollector(run))
         pipeline = Pipeline(
