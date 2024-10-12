@@ -11,13 +11,13 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Mapping, Iterable, Sequence, List, Optional, Any
 
-import diskcache
 from tqdm import tqdm
 
 from modelbench.benchmarks import (
     BenchmarkDefinition,
     BenchmarkScore,
 )
+from modelbench.cache import MBCache, DiskCache
 from modelbench.suts import ModelGaugeSut
 from modelgauge.annotation import Annotation
 from modelgauge.annotator import CompletionAnnotator
@@ -37,13 +37,6 @@ from modelgauge.single_turn_prompt_response import (
     SUTCompletionAnnotations,
 )
 from modelgauge.sut import SUTResponse, SUTCompletion
-from tqdm import tqdm
-
-from modelbench.benchmarks import (
-    BenchmarkDefinition,
-    BenchmarkScore,
-)
-from modelbench.suts import ModelGaugeSut
 
 
 class RunTracker:
